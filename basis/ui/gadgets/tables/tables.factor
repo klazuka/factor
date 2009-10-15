@@ -51,8 +51,8 @@ multiple-selection? ;
 
 <PRIVATE
 
-: add-selected-index ( table n -- table )
-    over selected-indices>> conjoin ;
+: add-selected-index ( table n -- )
+    over selected-indices>> conjoin drop ;
 
 : multiple>single ( values -- value/f ? )
     dup assoc-empty? [ drop f f ] [ values first t ] if ;
@@ -60,8 +60,8 @@ multiple-selection? ;
 : selected-index ( table -- n )
     selected-indices>> multiple>single drop ;
 
-: set-selected-index ( table n -- table )
-    dup associate >>selected-indices ;
+: set-selected-index ( table n -- )
+    dup associate >>selected-indices drop ;
 
 PRIVATE>
 
@@ -299,9 +299,6 @@ PRIVATE>
     [ 2drop ]
     if ;
 
-: hide-mouse-help ( table -- )
-    f >>mouse-index [ hide-status ] [ relayout-1 ] bi ;
-
 : find-row-index ( value table -- n/f )
     [ model>> value>> ] [ renderer>> ] bi
     '[ _ row-value eq? ] with find drop ;
@@ -339,11 +336,11 @@ M: table model-changed
 
 : add-selected-row ( table n -- )
     [ scroll-to-row ]
-    [ add-selected-index relayout-1 ] 2bi ;
+    [ add-selected-index ] 2bi ;
 
 : (select-row) ( table n -- )
     [ scroll-to-row ]
-    [ set-selected-index relayout-1 ]
+    [ set-selected-index ]
     2bi ;
 
 : mouse-row ( table -- n )
@@ -367,7 +364,7 @@ M: table model-changed
 : thru-button-down ( table -- )
     dup multiple-selection?>> [
       [ 2dup over selected-index (a,b) swap
-      [ swap add-selected-index drop ] curry each add-selected-row ]
+      [ swap add-selected-index ] curry each add-selected-row ]
       swap (table-button-down)
     ] [ table-button-down ] if ;
 
@@ -424,10 +421,13 @@ PRIVATE>
 : next-page ( table -- )
     1 prev/next-page ;
 
+: hide-mouse-help ( table -- )
+    f >>mouse-index hide-status ;
+
 : show-mouse-help ( table -- )
     [
         swap
-        [ >>mouse-index relayout-1 ]
+        [ >>mouse-index drop ]
         [ show-row-summary ]
         2bi
     ] [ hide-mouse-help ] if-mouse-row ;
@@ -445,9 +445,8 @@ PRIVATE>
         show-operations-menu
     ] [ drop ] if-mouse-row ;
 
-: focus-table ( table -- ) t >>focused? relayout-1 ;
-
-: unfocus-table ( table -- ) f >>focused? relayout-1 ;
+: focus-table ( table -- ) t >>focused? drop ;
+: unfocus-table ( table -- ) f >>focused? drop ;
 
 table "sundry" f {
     { mouse-enter show-mouse-help }
