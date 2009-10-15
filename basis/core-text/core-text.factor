@@ -47,7 +47,10 @@ ERROR: not-a-string object ;
         CTLineCreateWithAttributedString
     ] with-destructors ;
 
-TUPLE: line < disposable line metrics image loc dim ;
+TUPLE: line < disposable line metrics image loc dim render-info ;
+
+TUPLE: render-info font string loc dim ;
+C: <render-info> render-info
 
 : typographic-bounds ( line -- width ascent descent leading )
     0 <CGFloat> 0 <CGFloat> 0 <CGFloat>
@@ -125,23 +128,32 @@ TUPLE: line < disposable line metrics image loc dim ;
                 metrics [ open-font line compute-line-metrics ] |
 
             line >>line
-
+            font string loc dim <render-info> >>render-info
             metrics >>metrics
-
-            dim [
-                {
-                    [ font dim fill-background ]
-                    [ loc dim line string fill-selection-background ]
-                    [ loc set-text-position ]
-                    [ [ line ] dip CTLineDraw ]
-                } cleave
-            ] make-bitmap-image >>image
-
             metrics loc dim line-loc >>loc
-
             metrics metrics>dim >>dim
         ]
     ] with-destructors ;
+
+:: render ( line -- line image )
+    [let | ctline [ line line>> ]
+           string [ line render-info>> string>> ]
+           font [ line render-info>> font>> ]
+           loc [ line render-info>> loc>> ]
+           dim [ line render-info>> dim>> ] |
+
+        line dim [
+            {
+                [ font dim fill-background ]
+                [ loc dim ctline string fill-selection-background ]
+                [ loc set-text-position ]
+                [ [ ctline ] dip CTLineDraw ]
+            } cleave
+        ] make-bitmap-image
+    ] ;
+
+: line>image ( line -- image )
+    dup image>> [ render >>image ] unless image>> ;
 
 M: line dispose* line>> CFRelease ;
 
